@@ -6,14 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "import:players": "node scripts/import_players.js"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.0.0",
     "next": "^13.5.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "swr": "^2.0.0"
+    "swr": "^2.0.0",
+    "papaparse": "^5.4.1",
+    "dotenv": "^16.0.0"
   },
   "devDependencies": {
     "@types/node": "^18.0.0",
