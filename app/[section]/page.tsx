@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2, CalendarDays, MapPin, Trophy, Users } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, MapPin, Trophy, UserRound, Users } from "lucide-react";
 import { EmptyState } from "@/components/empty-state";
 import { NewsCard } from "@/components/news-card";
 import { StandingsTable } from "@/components/standings-table";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
+import { teamCoaches, teamRosters } from "@/lib/rosters";
 import { notFound } from "next/navigation";
 
 const validSections = [
@@ -19,7 +20,7 @@ const labels: Record<string, { eyebrow: string; title: string; intro: string }> 
   leagues: { eyebrow: "Competition structure", title: "Leagues", intro: "The leagues that make up Australian Downball." },
   divisions: { eyebrow: "2025/26 season", title: "Divisions", intro: "Find division information, fixtures, results and ladders." },
   teams: { eyebrow: "VJDA Under 16", title: "Teams", intro: "Meet the 24 Victorian clubs in the 2025/26 competition." },
-  players: { eyebrow: "Athletes", title: "Players", intro: "Player profiles and season statistics will appear here." },
+  players: { eyebrow: "Athletes", title: "Players", intro: "Meet the VJDA Under 16 players and coaches." },
   fixtures: { eyebrow: "Match centre", title: "Fixtures", intro: "Dates, times and venues for upcoming Downball matches." },
   results: { eyebrow: "Match centre", title: "Results", intro: "Official scores and completed match information." },
   standings: { eyebrow: "VJDA 2025/26 · Under 16", title: "Standings", intro: "The official competition ladder." },
@@ -108,7 +109,27 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
           <EmptyState title="No results yet" text="Official results will appear here after scores are entered and matches are marked finished." />
         )}
         {section === "players" && (
-          <EmptyState title="Player profiles coming soon" text="No public player roster was available on the original website. Add players and assign them to clubs from the admin dashboard." />
+          <div className="profile-layout">
+            {data.teams.map((team) => {
+              const roster = teamRosters[team.name] ?? [];
+              const coach = teamCoaches[team.name];
+              return (
+                <article className="content-card" key={team.id}>
+                  <Link href={`/teams/${team.slug}`}><h2>{team.name}</h2></Link>
+                  {coach && <p><strong>Head coach:</strong> {coach}</p>}
+                  <div className="team-grid">
+                    {roster.map((player) => (
+                      <div className="team-card" key={`${team.id}-${player}`}>
+                        <UserRound size={26} />
+                        <h3>{player}</h3>
+                        <p>{team.name}</p>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+              );
+            })}
+          </div>
         )}
         {(section === "rankings" || section === "records") && (
           <EmptyState title={`${labels[section].title} coming soon`} text="This section is ready for administrators to publish official competition data." />
