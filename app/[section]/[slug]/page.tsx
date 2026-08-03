@@ -6,13 +6,14 @@ import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
-import { teamCoaches, teamRosters } from "@/lib/rosters";
+import { teamCoaches } from "@/lib/rosters";
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string; slug: string }> }): Promise<Metadata> {
   const { section, slug } = await params;
   const data = await getSiteData();
   const title =
     section === "teams" ? data.teams.find((item) => item.slug === slug)?.name :
+    section === "players" ? data.players.find((item) => item.slug === slug)?.name :
     section === "news" ? data.articles.find((item) => item.slug === slug)?.title :
     section === "venues" ? data.venues.find((item) => item.slug === slug)?.name : undefined;
   return title ? { title } : {};
@@ -45,10 +46,52 @@ export default async function DetailPage({ params }: { params: Promise<{ section
     );
   }
 
+  if (section === "players") {
+    const player = data.players.find((item) => item.slug === slug);
+    if (!player) notFound();
+    const team = data.teams.find((item) => item.id === player.teamId);
+    return (
+      <>
+        <section className="team-profile-hero" style={{ "--team-primary": team?.colours[0] ?? "#f5c518" } as React.CSSProperties}>
+          <div className="shell team-profile-grid">
+            {player.photoUrl ? (
+              <div aria-label={`${player.name} profile photo`} role="img" style={{ backgroundImage: `url(${player.photoUrl})`, backgroundPosition: "center", backgroundSize: "cover", border: "4px solid rgba(255,255,255,.7)", borderRadius: "999px", height: 150, width: 150 }} />
+            ) : <UserRound size={110} />}
+            <div>
+              <span className="eyebrow">Player profile</span>
+              <h1>{player.name}</h1>
+              <p>{team ? <Link href={`/teams/${team.slug}`}>{team.name}</Link> : "Unassigned player"}</p>
+            </div>
+          </div>
+        </section>
+        <section className="section shell">
+          <div className="profile-layout">
+            <div className="content-card">
+              <h2>Player details</h2>
+              <p><strong>Number:</strong> {player.number ?? "—"}</p>
+              <p><strong>Position:</strong> {player.position ?? "—"}</p>
+              <p><strong>Height:</strong> {player.heightCm ? `${player.heightCm} cm` : "—"}</p>
+              <p><strong>Weight:</strong> {player.weightKg ? `${player.weightKg} kg` : "—"}</p>
+              <p><strong>Nationality:</strong> {player.nationality ?? "—"}</p>
+            </div>
+            <div className="content-card">
+              <h2>Biography</h2>
+              <p>{player.biography || "Player biography coming soon."}</p>
+            </div>
+            <div className="content-card">
+              <h2>Awards</h2>
+              <p>{player.awards || "No awards have been published yet."}</p>
+            </div>
+          </div>
+        </section>
+      </>
+    );
+  }
+
   if (section === "teams") {
     const team = data.teams.find((item) => item.slug === slug);
     if (!team) notFound();
-    const roster = teamRosters[team.name] ?? [];
+    const roster = data.players.filter((player) => player.teamId === team.id);
     const coach = teamCoaches[team.name];
     return (
       <>
@@ -67,11 +110,13 @@ export default async function DetailPage({ params }: { params: Promise<{ section
               {coach && <p><strong>Head coach:</strong> {coach}</p>}
               <div className="team-grid">
                 {roster.map((player) => (
-                  <article className="team-card" key={player}>
-                    <UserRound size={28} />
-                    <h3>{player}</h3>
-                    <p>{team.name}</p>
-                  </article>
+                  <Link className="team-card" href={`/players/${player.slug}`} key={player.id}>
+                    {player.photoUrl ? (
+                      <div aria-label={`${player.name} profile photo`} role="img" style={{ backgroundImage: `url(${player.photoUrl})`, backgroundPosition: "center", backgroundSize: "cover", borderRadius: "999px", height: 64, width: 64 }} />
+                    ) : <UserRound size={28} />}
+                    <h3>{player.name}</h3>
+                    <p>{[player.position, player.heightCm ? `${player.heightCm} cm` : undefined, player.weightKg ? `${player.weightKg} kg` : undefined].filter(Boolean).join(" · ") || team.name}</p>
+                  </Link>
                 ))}
               </div>
             </div>
