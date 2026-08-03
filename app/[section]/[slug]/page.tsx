@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowLeft, ExternalLink, MapPin } from "lucide-react";
+import { ArrowLeft, ExternalLink, MapPin, UserRound } from "lucide-react";
 import { notFound } from "next/navigation";
 import { EmptyState } from "@/components/empty-state";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
+import { teamCoaches, teamRosters } from "@/lib/rosters";
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string; slug: string }> }): Promise<Metadata> {
   const { section, slug } = await params;
@@ -47,6 +48,8 @@ export default async function DetailPage({ params }: { params: Promise<{ section
   if (section === "teams") {
     const team = data.teams.find((item) => item.slug === slug);
     if (!team) notFound();
+    const roster = teamRosters[team.name] ?? [];
+    const coach = teamCoaches[team.name];
     return (
       <>
         <section className="team-profile-hero" style={{ "--team-primary": team.colours[0] } as React.CSSProperties}>
@@ -59,7 +62,19 @@ export default async function DetailPage({ params }: { params: Promise<{ section
           <div className="profile-layout">
             <div className="content-card"><h2>Club overview</h2><p>{team.description}</p><div className="colour-swatches"><span style={{ background: team.colours[0] }} /><span style={{ background: team.colours[1] }} /></div></div>
             <div className="content-card"><h2>Upcoming fixtures</h2><EmptyState title="Schedule coming soon" text="No fixtures have been published for this club." /></div>
-            <div className="content-card"><h2>Player roster</h2><EmptyState title="Roster coming soon" text="No public player data was available on TeamLinkt." /></div>
+            <div className="content-card">
+              <h2>Team roster</h2>
+              {coach && <p><strong>Head coach:</strong> {coach}</p>}
+              <div className="team-grid">
+                {roster.map((player) => (
+                  <article className="team-card" key={player}>
+                    <UserRound size={28} />
+                    <h3>{player}</h3>
+                    <p>{team.name}</p>
+                  </article>
+                ))}
+              </div>
+            </div>
           </div>
         </section>
       </>
