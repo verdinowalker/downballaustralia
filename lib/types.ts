@@ -68,6 +68,11 @@ export type Player = {
   number?: number;
   position?: string;
   nationality?: string;
+  photoUrl?: string;
+  heightCm?: number;
+  weightKg?: number;
+  biography?: string;
+  awards?: string;
 };
 
 export type SiteSettings = {

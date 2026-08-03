@@ -1,11 +1,12 @@
 import { cache } from "react";
 import { demoData } from "./demo-data";
+import { buildFallbackPlayers, mergePlayersWithFallback } from "./player-data";
 import { createSupabaseServerClient } from "./supabase/server";
-import type { SiteData } from "./types";
+import type { Player, SiteData, Team } from "./types";
 
 export const getSiteData = cache(async (): Promise<SiteData> => {
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return demoData;
+  if (!supabase) return { ...demoData, players: buildFallbackPlayers(demoData.teams) };
 
   const [settings, teams, standings, fixtures, articles, sponsors, venues, players] =
     await Promise.all([
@@ -19,7 +20,34 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
       supabase.from("players").select("*").eq("archived", false).order("name")
     ]);
 
-  if (teams.error || !teams.data?.length) return demoData;
+  if (teams.error || !teams.data?.length) return { ...demoData, players: buildFallbackPlayers(demoData.teams) };
+
+  const mappedTeams: Team[] = teams.data.map((item) => ({
+    id: item.id,
+    slug: item.slug,
+    name: item.name,
+    shortName: item.short_name,
+    location: item.location,
+    colours: [item.primary_colour, item.secondary_colour],
+    logoUrl: item.logo_url,
+    venue: item.home_venue_id ?? undefined,
+    description: item.description
+  }));
+
+  const databasePlayers: Player[] = (players.data ?? []).map((item) => ({
+    id: item.id,
+    slug: item.slug,
+    name: item.name,
+    teamId: item.team_id,
+    number: item.jersey_number ?? undefined,
+    position: item.position ?? undefined,
+    nationality: item.nationality ?? undefined,
+    photoUrl: item.photo_url ?? undefined,
+    heightCm: item.height_cm ?? undefined,
+    weightKg: item.weight_kg == null ? undefined : Number(item.weight_kg),
+    biography: item.biography ?? undefined,
+    awards: item.awards ?? undefined
+  }));
 
   return {
     settings: settings.data
@@ -34,17 +62,7 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
           location: settings.data.location
         }
       : demoData.settings,
-    teams: teams.data.map((item) => ({
-      id: item.id,
-      slug: item.slug,
-      name: item.name,
-      shortName: item.short_name,
-      location: item.location,
-      colours: [item.primary_colour, item.secondary_colour],
-      logoUrl: item.logo_url,
-      venue: item.home_venue_id ?? undefined,
-      description: item.description
-    })),
+    teams: mappedTeams,
     standings: (standings.data ?? []).map((item) => ({
       teamId: item.team_id,
       played: item.played,
@@ -90,14 +108,6 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
       name: item.name,
       address: item.address
     })),
-    players: (players.data ?? []).map((item) => ({
-      id: item.id,
-      slug: item.slug,
-      name: item.name,
-      teamId: item.team_id,
-      number: item.jersey_number,
-      position: item.position,
-      nationality: item.nationality
-    }))
+    players: mergePlayersWithFallback(mappedTeams, databasePlayers)
   };
 });
