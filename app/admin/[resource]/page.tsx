@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { AdminShell } from "@/components/admin-shell";
 import { ResourceManager } from "@/components/resource-manager";
-import { adminResources } from "@/lib/admin-config";
+import { adminResources } from "@/lib/admin-resource-enhancements";
 import { demoData } from "@/lib/demo-data";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 
