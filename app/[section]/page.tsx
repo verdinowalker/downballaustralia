@@ -6,7 +6,7 @@ import { NewsCard } from "@/components/news-card";
 import { StandingsTable } from "@/components/standings-table";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
-import { teamCoaches, teamRosters } from "@/lib/rosters";
+import { teamCoaches } from "@/lib/rosters";
 import { notFound } from "next/navigation";
 
 const validSections = [
@@ -111,7 +111,7 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
         {section === "players" && (
           <div className="profile-layout">
             {data.teams.map((team) => {
-              const roster = teamRosters[team.name] ?? [];
+              const roster = data.players.filter((player) => player.teamId === team.id);
               const coach = teamCoaches[team.name];
               return (
                 <article className="content-card" key={team.id}>
@@ -119,11 +119,18 @@ export default async function SectionPage({ params }: { params: Promise<{ sectio
                   {coach && <p><strong>Head coach:</strong> {coach}</p>}
                   <div className="team-grid">
                     {roster.map((player) => (
-                      <div className="team-card" key={`${team.id}-${player}`}>
-                        <UserRound size={26} />
-                        <h3>{player}</h3>
-                        <p>{team.name}</p>
-                      </div>
+                      <Link className="team-card" href={`/players/${player.slug}`} key={player.id}>
+                        {player.photoUrl ? (
+                          <div aria-label={`${player.name} profile photo`} role="img" style={{ backgroundImage: `url(${player.photoUrl})`, backgroundPosition: "center", backgroundSize: "cover", borderRadius: "999px", height: 64, width: 64 }} />
+                        ) : <UserRound size={34} />}
+                        <h3>{player.name}</h3>
+                        <p>
+                          {[player.position, player.heightCm ? `${player.heightCm} cm` : undefined, player.weightKg ? `${player.weightKg} kg` : undefined]
+                            .filter(Boolean)
+                            .join(" · ") || team.name}
+                        </p>
+                        <span>View profile <ArrowRight size={15} /></span>
+                      </Link>
                     ))}
                   </div>
                 </article>
