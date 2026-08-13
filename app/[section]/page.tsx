@@ -7,6 +7,7 @@ import { StandingsTable } from "@/components/standings-table";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
 import { teamCoaches } from "@/lib/rosters";
+import { containsSearchBlockedName, noIndexMetadata } from "@/lib/search-privacy";
 import { notFound } from "next/navigation";
 
 const validSections = [
@@ -36,7 +37,23 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string }> }): Promise<Metadata> {
   const { section } = await params;
-  return labels[section] ? { title: labels[section].title, description: labels[section].intro } : {};
+  const copy = labels[section];
+  if (!copy) return {};
+
+  const metadata: Metadata = { title: copy.title, description: copy.intro };
+
+  if (section === "players" || section === "news") {
+    const data = await getSiteData();
+    const renderedContent = section === "players"
+      ? data.players
+      : data.articles.filter((article) => article.status === "published").map((article) => ({ title: article.title, excerpt: article.excerpt }));
+
+    if (containsSearchBlockedName(renderedContent)) {
+      metadata.robots = noIndexMetadata;
+    }
+  }
+
+  return metadata;
 }
 
 function PageHero({ section }: { section: string }) {
