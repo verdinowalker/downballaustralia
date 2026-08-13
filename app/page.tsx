@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, CalendarDays, MapPin, Trophy } from "lucide-react";
@@ -10,6 +11,20 @@ import { Sponsors } from "@/components/sponsors";
 import { StandingsTable } from "@/components/standings-table";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
+import { containsSearchBlockedName, noIndexMetadata } from "@/lib/search-privacy";
+
+export async function generateMetadata(): Promise<Metadata> {
+  const data = await getSiteData();
+  const published = data.articles.filter((article) => article.status === "published").sort((a, b) => +new Date(b.publishedAt) - +new Date(a.publishedAt));
+  const renderedNews = [
+    ...published.map((article) => article.title),
+    ...published.slice(0, 4).map((article) => article.excerpt),
+  ];
+
+  return containsSearchBlockedName(renderedNews)
+    ? { robots: noIndexMetadata }
+    : {};
+}
 
 export default async function HomePage() {
   const data = await getSiteData();
