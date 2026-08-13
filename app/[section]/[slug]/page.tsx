@@ -7,16 +7,49 @@ import { EmptyState } from "@/components/empty-state";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
 import { teamCoaches } from "@/lib/rosters";
+import { containsSearchBlockedName, noIndexMetadata } from "@/lib/search-privacy";
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string; slug: string }> }): Promise<Metadata> {
   const { section, slug } = await params;
   const data = await getSiteData();
-  const title =
-    section === "teams" ? data.teams.find((item) => item.slug === slug)?.name :
-    section === "players" ? data.players.find((item) => item.slug === slug)?.name :
-    section === "news" ? data.articles.find((item) => item.slug === slug)?.title :
-    section === "venues" ? data.venues.find((item) => item.slug === slug)?.name : undefined;
-  return title ? { title } : {};
+
+  if (section === "players") {
+    const player = data.players.find((item) => item.slug === slug);
+    if (!player) return {};
+    return {
+      title: player.name,
+      ...(containsSearchBlockedName(player) ? { robots: noIndexMetadata } : {}),
+    };
+  }
+
+  if (section === "news") {
+    const article = data.articles.find((item) => item.slug === slug);
+    if (!article) return {};
+    return {
+      title: article.title,
+      ...(containsSearchBlockedName({ title: article.title, excerpt: article.excerpt, body: article.body })
+        ? { robots: noIndexMetadata }
+        : {}),
+    };
+  }
+
+  if (section === "teams") {
+    const team = data.teams.find((item) => item.slug === slug);
+    if (!team) return {};
+    const roster = data.players.filter((player) => player.teamId === team.id);
+    const coach = teamCoaches[team.name];
+    return {
+      title: team.name,
+      ...(containsSearchBlockedName({ team, roster, coach }) ? { robots: noIndexMetadata } : {}),
+    };
+  }
+
+  if (section === "venues") {
+    const venue = data.venues.find((item) => item.slug === slug);
+    return venue ? { title: venue.name } : {};
+  }
+
+  return {};
 }
 
 export default async function DetailPage({ params }: { params: Promise<{ section: string; slug: string }> }) {
