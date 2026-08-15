@@ -83,6 +83,8 @@ export default async function DetailPage({ params }: { params: Promise<{ section
     const player = data.players.find((item) => item.slug === slug);
     if (!player) notFound();
     const team = data.teams.find((item) => item.id === player.teamId);
+    const seasonStats = player.statistics?.filter((item) => !item.isCareer) ?? [];
+    const careerStats = player.statistics?.find((item) => item.isCareer);
     return (
       <>
         <section className="team-profile-hero" style={{ "--team-primary": team?.colours[0] ?? "#f5c518" } as React.CSSProperties}>
@@ -106,6 +108,23 @@ export default async function DetailPage({ params }: { params: Promise<{ section
               <p><strong>Height:</strong> {player.heightCm ? `${player.heightCm} cm` : "—"}</p>
               <p><strong>Weight:</strong> {player.weightKg ? `${player.weightKg} kg` : "—"}</p>
               <p><strong>Nationality:</strong> {player.nationality ?? "—"}</p>
+            </div>
+            <div className="content-card">
+              <h2>Official statistics</h2>
+              {careerStats ? (
+                <div className="feature-grid">
+                  <div><strong>{careerStats.matches}</strong><span>Games</span></div>
+                  <div><strong>{careerStats.points}</strong><span>Points</span></div>
+                  <div><strong>{careerStats.wins}</strong><span>Wins</span></div>
+                  <div><strong>{careerStats.losses}</strong><span>Losses</span></div>
+                </div>
+              ) : <p>No official completed-match statistics yet.</p>}
+              {seasonStats.map((stat) => (
+                <div key={stat.label} style={{ marginTop: 18 }}>
+                  <strong>{stat.label}</strong>
+                  <p>{stat.matches} games · {stat.points} points · {stat.wins} wins · {stat.losses} losses</p>
+                </div>
+              ))}
             </div>
             <div className="content-card">
               <h2>Biography</h2>
