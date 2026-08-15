@@ -165,13 +165,18 @@ export function LiveMatchControl() {
     if (!supabase || !selectedFixture) return;
     setBusy(true);
     setMessage("");
-    ensurePlayerStats();
-    const rows = stats.length ? stats : players.filter((player) => player.team_id === selectedFixture.home_team_id || player.team_id === selectedFixture.away_team_id).map((player) => blankStat(selectedFixture.id, player));
+
+    const matchPlayers = players.filter((player) => player.team_id === selectedFixture.home_team_id || player.team_id === selectedFixture.away_team_id);
+    const existing = new Map(stats.map((item) => [item.player_id, item]));
+    const rows = matchPlayers.map((player) => existing.get(player.id) ?? blankStat(selectedFixture.id, player));
+    setStats(rows);
+
     const { error: fixtureError } = await supabase.from("fixtures").update({ home_score: score.home, away_score: score.away, status }).eq("id", selectedFixture.id);
     if (fixtureError) {
       setBusy(false);
       return setMessage(fixtureError.message);
     }
+
     const { data, error } = await supabase.from("match_player_statistics").upsert(rows, { onConflict: "fixture_id,player_id" }).select();
     setBusy(false);
     if (error) return setMessage(error.message);
@@ -232,7 +237,7 @@ export function LiveMatchControl() {
               if (!player) return null;
               return <div key={player.id} style={{ display: "grid", gridTemplateColumns: "240px repeat(14, 72px)", gap: 6, alignItems: "center", padding: "8px 6px", borderTop: "1px solid rgba(255,255,255,.08)" }}>
                 <div><strong>{player.jersey_number ? `#${player.jersey_number} ` : ""}{player.name}</strong><small style={{ display: "block", opacity: .55 }}>{player.position ?? ""}</small></div>
-                {statFields.map((field) => <input key={field.key} aria-label={`${player.name} ${field.label}`} min={0} onChange={(event) => updateStat(player.id, field.key, event.target.value)} step={field.key === "minutes" ? "0.1" : "1"} type="number" value={Number(stat[field.key]) || 0} />)}
+                {statFields.map((field) => <input key={field.key} aria-label={`${player.name} ${field.label}`} min={field.key === "plus_minus" ? undefined : 0} onChange={(event) => updateStat(player.id, field.key, event.target.value)} step={field.key === "minutes" ? "0.1" : "1"} type="number" value={Number(stat[field.key]) || 0} />)}
               </div>;
             })}
             {!displayStats.length && <p style={{ padding: 24, opacity: .7 }}>No players are attached to this team's roster.</p>}
