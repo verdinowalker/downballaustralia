@@ -2,13 +2,13 @@ import { cache } from "react";
 import { demoData } from "./demo-data";
 import { buildFallbackPlayers, mergePlayersWithFallback } from "./player-data";
 import { createSupabaseServerClient } from "./supabase/server";
-import type { Player, SiteData, Team } from "./types";
+import type { Player, PlayerStatistic, SiteData, Team } from "./types";
 
 export const getSiteData = cache(async (): Promise<SiteData> => {
   const supabase = await createSupabaseServerClient();
   if (!supabase) return { ...demoData, players: buildFallbackPlayers(demoData.teams) };
 
-  const [settings, teams, standings, fixtures, articles, sponsors, venues, players] =
+  const [settings, teams, standings, fixtures, articles, sponsors, venues, players, playerStats] =
     await Promise.all([
       supabase.from("site_settings").select("*").limit(1).maybeSingle(),
       supabase.from("teams").select("*").eq("archived", false).order("name"),
@@ -17,7 +17,8 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
       supabase.from("articles").select("*").eq("status", "published").order("published_at", { ascending: false }),
       supabase.from("sponsors").select("*").eq("active", true).order("sort_order"),
       supabase.from("venues").select("*").eq("archived", false).order("name"),
-      supabase.from("players").select("*").eq("archived", false).order("name")
+      supabase.from("players").select("*").eq("archived", false).order("name"),
+      supabase.from("player_statistics").select("*").order("is_career", { ascending: true })
     ]);
 
   if (teams.error || !teams.data?.length) return { ...demoData, players: buildFallbackPlayers(demoData.teams) };
@@ -34,6 +35,20 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     description: item.description
   }));
 
+  const statsByPlayer = new Map<string, PlayerStatistic[]>();
+  for (const item of playerStats.data ?? []) {
+    const current = statsByPlayer.get(item.player_id) ?? [];
+    current.push({
+      label: item.label,
+      matches: item.matches,
+      points: item.points,
+      wins: item.wins,
+      losses: item.losses,
+      isCareer: item.is_career
+    });
+    statsByPlayer.set(item.player_id, current);
+  }
+
   const databasePlayers: Player[] = (players.data ?? []).map((item) => ({
     id: item.id,
     slug: item.slug,
@@ -46,7 +61,8 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     heightCm: item.height_cm ?? undefined,
     weightKg: item.weight_kg == null ? undefined : Number(item.weight_kg),
     biography: item.biography ?? undefined,
-    awards: item.awards ?? undefined
+    awards: item.awards ?? undefined,
+    statistics: statsByPlayer.get(item.id) ?? []
   }));
 
   return {
