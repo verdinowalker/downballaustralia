@@ -60,6 +60,15 @@ export type Venue = {
   address: string;
 };
 
+export type PlayerStatistic = {
+  label: string;
+  matches: number;
+  points: number;
+  wins: number;
+  losses: number;
+  isCareer: boolean;
+};
+
 export type Player = {
   id: string;
   slug: string;
@@ -73,6 +82,7 @@ export type Player = {
   weightKg?: number;
   biography?: string;
   awards?: string;
+  statistics?: PlayerStatistic[];
 };
 
 export type SiteSettings = {
