@@ -21,6 +21,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sections = ["competitions","leagues","divisions","teams","fixtures","results","standings","rankings","records","venues","about","contact"];
   if (!newsListingContainsBlockedName) sections.unshift("news");
 
+  const indexablePlayers = data.players.filter((player) => !containsSearchBlockedName(player));
+
   const indexableTeams = data.teams.filter((team) => {
     const roster = data.players.filter((player) => player.teamId === team.id);
     return !containsSearchBlockedName({ team, roster });
@@ -33,6 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     ...(!homeContainsBlockedName ? [{ url: base, changeFrequency: "daily" as const, priority: 1 }] : []),
     ...sections.map((section) => ({ url: `${base}/${section}`, changeFrequency: "weekly" as const, priority: .8 })),
+    ...indexablePlayers.map((player) => ({ url: `${base}/players/${player.slug}`, changeFrequency: "weekly" as const, priority: .7 })),
     ...indexableTeams.map((team) => ({ url: `${base}/teams/${team.slug}`, changeFrequency: "weekly" as const, priority: .7 })),
     ...data.venues.map((venue) => ({ url: `${base}/venues/${venue.slug}`, changeFrequency: "monthly" as const, priority: .5 })),
     ...indexableArticles.map((article) => ({
