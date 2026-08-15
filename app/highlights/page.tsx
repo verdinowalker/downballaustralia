@@ -1,3 +1,4 @@
+// Production deployment checkpoint: Highlights page is ready for release.
 import type { Metadata } from "next";
 import { HighlightsGrid } from "@/components/highlights-grid";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
