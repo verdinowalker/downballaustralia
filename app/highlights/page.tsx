@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { HighlightsGrid } from "@/components/highlights-grid";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { redactPublicText } from "@/lib/search-privacy";
 
 export const metadata: Metadata = {
   title: "Highlights | Downball Australia",
@@ -24,11 +25,11 @@ export default async function HighlightsPage() {
       </div>
       <HighlightsGrid items={items.map((item) => ({
         id: String(item.id),
-        title: String(item.title ?? "Untitled highlight"),
-        description: item.description ? String(item.description) : null,
+        title: redactPublicText(String(item.title ?? "Untitled highlight")),
+        description: item.description ? redactPublicText(String(item.description)) : null,
         video_url: String(item.video_url),
         thumbnail_url: item.thumbnail_url ? String(item.thumbnail_url) : null,
-        featured_player: item.featured_player ? String(item.featured_player) : null,
+        featured_player: item.featured_player ? redactPublicText(String(item.featured_player)) : null,
         published_at: String(item.published_at)
       }))} />
     </section>
