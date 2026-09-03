@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { demoData } from "./demo-data";
 import { buildFallbackPlayers, mergePlayersWithFallback } from "./player-data";
+import { containsSearchBlockedName, redactPublicText } from "./search-privacy";
 import { createSupabaseServerClient } from "./supabase/server";
 import type { Player, PlayerStatistic, SiteData, Team } from "./types";
 
@@ -102,14 +103,14 @@ export const getSiteData = cache(async (): Promise<SiteData> => {
     })),
     articles: (articles.data ?? []).map((item) => ({
       id: item.id,
-      slug: item.slug,
-      title: item.title,
-      excerpt: item.excerpt,
-      body: item.body,
+      slug: redactPublicText(item.slug),
+      title: redactPublicText(item.title),
+      excerpt: redactPublicText(item.excerpt),
+      body: redactPublicText(item.body),
       imageUrl: item.image_url,
       publishedAt: item.published_at,
       status: item.status,
-      sourceUrl: item.source_url
+      sourceUrl: containsSearchBlockedName(item.source_url) ? undefined : item.source_url
     })),
     sponsors: (sponsors.data ?? []).map((item) => ({
       id: item.id,
