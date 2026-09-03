@@ -8,7 +8,7 @@ export const teamRosters: Record<string, string[]> = {
     "Kobe Romano",
     "Malachi Singh",
     "Mason Green",
-    "Ved Suthar",
+    "Private Player",
     "Yusuf Collins",
   ],
   "Dandenong": [
