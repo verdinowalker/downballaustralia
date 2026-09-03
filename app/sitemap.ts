@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 import { getSiteData } from "@/lib/data";
-import { containsSearchBlockedName } from "@/lib/search-privacy";
+import { containsSearchBlockedName, isPrivatePlayer } from "@/lib/search-privacy";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://downball-world-cup.goutgout67.chatgpt.site";
@@ -21,11 +21,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const sections = ["competitions","leagues","divisions","teams","fixtures","results","standings","rankings","records","venues","about","contact"];
   if (!newsListingContainsBlockedName) sections.unshift("news");
 
-  const indexablePlayers = data.players.filter((player) => !containsSearchBlockedName(player));
+  const indexablePlayers = data.players.filter((player) => !isPrivatePlayer(player) && !containsSearchBlockedName(player));
 
   const indexableTeams = data.teams.filter((team) => {
     const roster = data.players.filter((player) => player.teamId === team.id);
-    return !containsSearchBlockedName({ team, roster });
+    return !roster.some(isPrivatePlayer) && !containsSearchBlockedName({ team, roster });
   });
 
   const indexableArticles = publishedArticles.filter((article) =>
