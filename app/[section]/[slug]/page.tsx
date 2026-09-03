@@ -7,7 +7,7 @@ import { EmptyState } from "@/components/empty-state";
 import { TeamBadge } from "@/components/team-badge";
 import { getSiteData } from "@/lib/data";
 import { teamCoaches } from "@/lib/rosters";
-import { containsSearchBlockedName, noIndexMetadata } from "@/lib/search-privacy";
+import { containsSearchBlockedName, isPrivatePlayer, noIndexMetadata } from "@/lib/search-privacy";
 
 export async function generateMetadata({ params }: { params: Promise<{ section: string; slug: string }> }): Promise<Metadata> {
   const { section, slug } = await params;
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ section: 
     if (!player) return {};
     return {
       title: player.name,
-      ...(containsSearchBlockedName(player) ? { robots: noIndexMetadata } : {}),
+      ...(isPrivatePlayer(player) || containsSearchBlockedName(player) ? { robots: noIndexMetadata } : {}),
     };
   }
 
